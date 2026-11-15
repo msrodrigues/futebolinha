@@ -45,12 +45,29 @@
   .leg i { display:inline-block; width:14px; height:14px; border-radius:5px; margin-right:5px; vertical-align:-2px }
   .leg input { width:54px; padding:4px; font:inherit; font-weight:900; color:var(--tx); background:#fff; border:3px solid var(--az); border-radius:10px; text-align:center }
   .tn { display:inline-flex; align-items:center; gap:7px; vertical-align:middle; font-weight:800 }
-  .jogo { display:grid; grid-template-columns:1fr 54px 16px 54px 1fr; gap:6px; align-items:center; padding:8px 4px }
-  .jogo+.jogo, .folga { border-top:2px dashed var(--bd) }
+  .jogo { display:grid; grid-template-columns:1fr 54px 16px 54px 1fr; gap:6px; align-items:center; padding:8px 4px 4px }
+  .partida { padding-bottom:6px }
+  .partida+.partida, .folga { border-top:2px dashed var(--bd) }
   .jogo .c { text-align:right } .jogo .f { text-align:left } .jogo .x { text-align:center; color:var(--mut); font-weight:900 }
   .jogo .c .tn { flex-direction:row-reverse }
-  .jogo.anulado { opacity:.4; text-decoration:line-through }
+  .partida.anulado { opacity:.4; text-decoration:line-through }
   .folga { color:var(--mut); font-size:14px; padding:8px 4px 2px }
+  .stp { display:flex; flex-direction:column; align-items:stretch; gap:3px }
+  .stp button { padding:0; min-height:34px !important; line-height:1; font-size:15px; border-radius:10px; box-shadow:0 2px 0 var(--ink); background:#e9f6ff; color:var(--az) }
+  .stp button:active { transform:translateY(2px) }
+  .stp output { text-align:center; font-size:26px; font-weight:900; color:var(--az); line-height:1.1 }
+  .ao-vivo { font-size:12px; color:#d62f1f; margin-left:6px; animation:pisca 1.4s infinite }
+  @keyframes pisca { 50% { opacity:.3 } }
+  .timer { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:2px 4px 0; padding:6px 8px; background:#f3f9ff; border:2px solid var(--bd); border-radius:14px }
+  .timer button { padding:4px 10px; min-height:34px !important; border-width:2px; box-shadow:0 2px 0 var(--ink); font-size:15px }
+  .timer button.mini { font-size:12px; padding:4px 7px }
+  .tt { font-size:20px; font-weight:900; font-variant-numeric:tabular-nums; color:var(--az); min-width:56px; text-align:center }
+  .tbar { flex:1 1 120px; height:14px; background:#dfe8f5; border:2px solid var(--ink); border-radius:999px; overflow:hidden }
+  .tbar i { display:block; height:100%; width:100%; background:#2fb350; border-radius:999px; transition:width .1s linear, background .3s }
+  .timer.warn .tbar i { background:#ffb000 } .timer.warn .tt { color:#c27a00 }
+  .timer.crit .tbar i { background:#e02b20 } .timer.crit .tt { color:#d62f1f; animation:pisca .6s infinite }
+  .timer.fim .tt { color:#d62f1f } .timer.fim:after { content:"🏁 Fim de jogo!"; font-weight:900; color:var(--ink); font-size:14px }
+  .cfg input { width:64px }
   input[type=text] { width:54px; padding:7px 2px; text-align:center; font:inherit; font-size:20px; font-weight:900; color:var(--az); background:#fff; border:3px solid var(--az); border-radius:12px }
   input[type=text]:focus { outline:none; border-color:#ff7a00; box-shadow:0 0 0 3px #ffd9b0 }
   input[type=text]:disabled { background:#eef3ff; opacity:.8 }
@@ -128,8 +145,9 @@
 <script src="times.js"></script>
 <script>
 const KEY = 'campeonato-pc-v2';
-const novo = () => ({ players: [], started: false, volta: true, rounds: [], scores: {}, saved: {}, next: 1 });
+const novo = () => ({ players: [], started: false, volta: true, rounds: [], scores: {}, saved: {}, next: 1, dur: 180, tm: {}, mudo: false });
 let S = JSON.parse(localStorage.getItem(KEY) || 'null') || novo();
+S.dur ||= 180; S.tm ||= {};
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const P = id => S.players.find(p => p.id === id);
@@ -178,7 +196,6 @@ function rodadasExtras(novoId) {
 function classificar() {
   const t = Object.fromEntries(S.players.map(p => [p.id, { id: p.id, out: p.out, J:0, V:0, E:0, D:0, GP:0, GC:0 }]));
   S.rounds.forEach((r, ri) => {
-    if (!S.saved[ri]) return;
     r.jogos.forEach(([a, b], ji) => {
       if (P(a).out || P(b).out) return;
       const v = S.scores[ri + '-' + ji]; if (!v || v[0] === '' || v[1] === '') return;
@@ -218,36 +235,136 @@ function zonas() {
   return { lib, reb };
 }
 
-function desenharCorpo() {
-  if (!S.started) { $('corpo').innerHTML = ''; return; }
+function htmlTabela() {
   const Z = zonas(), nAt = S.players.filter(p => !p.out).length;
   const zona = (o, i) => o.out ? '' : i < Z.lib ? 'lib' : i >= nAt - Z.reb ? 'reb' : '';
   const linhas = classificar().map((o, i) => `<tr class="${o.out ? 'saiu' : (i === 0 && o.J ? 'lider ' : '') + zona(o, i)}">
     <td>${o.out ? '–' : (o.J && i < 3 ? ['🥇','🥈','🥉'][i] : i + 1)}</td><td class="nome">${tag(o.id)}${o.out ? ' <span class="mut">(saiu)</span>' : ''}</td><td class="pts">${o.P}</td>
     <td>${o.J}</td><td>${o.V}</td><td>${o.E}</td><td>${o.D}</td><td>${o.GP}</td><td>${o.GC}</td><td>${o.SG > 0 ? '+' : ''}${o.SG}</td><td>${o.J ? Math.round(o.P / (3 * o.J) * 100) + '%' : '–'}</td></tr>`).join('');
-  $('corpo').innerHTML = `
-    <h2>🏆 Tabela</h2>
-    <div class="card"><table id="tab"><thead><tr><th>#</th><th class="nome">Jogador</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Apr.</th></tr></thead><tbody>${linhas}</tbody></table></div>
+  return `<div class="card"><table id="tab"><thead><tr><th>#</th><th class="nome">Jogador</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Apr.</th></tr></thead><tbody>${linhas}</tbody></table></div>
     <div class="leg"><span><i style="background:#1e6fd9"></i>Libertadores: <input type="number" min="0" max="${nAt}" data-z="zLib" value="${Z.lib}"> primeiros</span>
-      <span><i style="background:#d93025"></i>Rebaixamento: <input type="number" min="0" max="${nAt}" data-z="zReb" value="${Z.reb}"> últimos</span></div>
-    <p class="rod">Vitória 3 · Empate 1 · Derrota 0. Só contam rodadas gravadas. Desempate: pontos, vitórias, saldo, gols pró.</p>
-    <h2>⚽ Rodadas</h2><div id="rodadas">${S.rounds.map(rodadaHTML).join('')}</div>`;
+      <span><i style="background:#d93025"></i>Rebaixamento: <input type="number" min="0" max="${nAt}" data-z="zReb" value="${Z.reb}"> últimos</span></div>`;
+}
+function atualizarTabela() { const t = $('tabela'); if (t) t.innerHTML = htmlTabela(); }
+
+function desenharCorpo() {
+  if (!S.started) { $('corpo').innerHTML = ''; return; }
+  $('corpo').innerHTML = `
+    <h2>🏆 Tabela <span class="ao-vivo">● ao vivo</span></h2>
+    <div id="tabela">${htmlTabela()}</div>
+    <p class="rod">Vitória 3 · Empate 1 · Derrota 0. A tabela muda a cada gol. Desempate: pontos, vitórias, saldo, gols pró.</p>
+    <h2>⚽ Rodadas</h2>
+    <div class="leg cfg"><label>⏱ Duração do jogo: <input type="number" id="durMin" min="0.5" step="0.5" value="${S.dur / 60}"> min</label>
+      <button id="mudo">${S.mudo ? '🔇 Sem som' : '🔊 Com som'}</button></div>
+    <div id="rodadas">${S.rounds.map(rodadaHTML).join('')}</div>`;
+  atualizarTimers();
 }
 
+const placar = v => [v && v[0] !== '' ? +v[0] : 0, v && v[1] !== '' ? +v[1] : 0];
+function stepper(k, sd, n, dis) {
+  return `<div class="stp"><button data-g="${k}" data-s="${sd}" data-d="1" ${dis} aria-label="mais um gol">▲</button><output>${n}</output><button data-g="${k}" data-s="${sd}" data-d="-1" ${dis} aria-label="menos um gol">▼</button></div>`;
+}
 function rodadaHTML(r, ri) {
   const gravada = !!S.saved[ri];
   const jogos = r.jogos.map(([a, b], ji) => {
-    const anul = P(a).out || P(b).out, v = S.scores[ri + '-' + ji] || ['', ''], dis = gravada || anul ? 'disabled' : '';
-    return `<div class="jogo ${anul ? 'anulado' : ''}"><span class="c">${tag(a)}</span>
-      <input type="text" inputmode="numeric" data-k="${ri}-${ji}" data-s="0" value="${v[0]}" ${dis}>
-      <span class="x">×</span>
-      <input type="text" inputmode="numeric" data-k="${ri}-${ji}" data-s="1" value="${v[1]}" ${dis}>
-      <span class="f">${tag(b)}</span></div>`;
+    const k = ri + '-' + ji, anul = P(a).out || P(b).out, [x, y] = placar(S.scores[k]), dis = gravada || anul ? 'disabled' : '';
+    return `<div class="partida ${anul ? 'anulado' : ''}" data-k="${k}"><div class="jogo"><span class="c">${tag(a)}</span>
+      ${stepper(k, 0, x, dis)}<span class="x">×</span>${stepper(k, 1, y, dis)}
+      <span class="f">${tag(b)}</span></div>${anul ? '' : timerHTML(k, dis)}</div>`;
   }).join('');
   return `<div class="card"><div class="rodcab"><span><strong>Rodada ${ri + 1}</strong> <span class="rod">${esc(r.lbl || '')}</span></span>
     ${gravada ? `<span><span class="ok">✓ gravada</span> <button data-r="${ri}" data-a="edit">Editar</button></span>` : `<button class="pri" data-r="${ri}" data-a="grav">⚽ Gravar rodada</button>`}</div>
     ${jogos}${r.folga ? `<div class="folga">Folga: ${tag(r.folga)}</div>` : ''}</div>`;
 }
+
+// ---- cronômetro de cada jogo (regressivo, com barra e sons) ----
+const RT = {};   // estado só de execução: alerta de 30 s e próximo clique
+const tinfo = k => S.tm[k] || (S.tm[k] = { rest: S.dur, dur: S.dur, end: null });
+const resta = k => { const t = tinfo(k); return t.end ? Math.max(0, (t.end - Date.now()) / 1000) : t.rest; };
+const mmss = sg => { sg = Math.ceil(sg); return String(Math.floor(sg / 60)).padStart(2, '0') + ':' + String(sg % 60).padStart(2, '0'); };
+function timerHTML(k, dis) {
+  return `<div class="timer" data-t="${k}"><button class="tplay" data-tm="play" ${dis}>▶</button><button data-tm="reset" ${dis} aria-label="Zerar cronômetro">↺</button>
+    <span class="tt">${mmss(S.dur)}</span><div class="tbar"><i></i></div>
+    <button class="mini" data-tm="-30" ${dis}>−30s</button><button class="mini" data-tm="+30" ${dis}>+30s</button></div>`;
+}
+function atualizarTimer(k) {
+  const el = document.querySelector(`.timer[data-t="${k}"]`); if (!el) return;
+  const t = tinfo(k), r = resta(k), run = !!t.end, tot = Math.max(t.dur, r, 1);
+  el.querySelector('.tt').textContent = mmss(r);
+  el.querySelector('.tbar i').style.width = (r / tot * 100) + '%';
+  el.querySelector('.tplay').textContent = run ? '⏸' : '▶';
+  el.classList.toggle('warn', r <= 30 && r > 15 && (run || r < tot));
+  el.classList.toggle('crit', r <= 15 && r > 0 && (run || r < tot));
+  el.classList.toggle('fim', r <= 0 && !run && t.dur > 0 && !!S.tm[k] && t.rest <= 0);
+}
+function atualizarTimers() { document.querySelectorAll('.timer').forEach(el => atualizarTimer(el.dataset.t)); }
+
+let AC;
+function tom(f, dur, vol = .25, tipo = 'sine', atraso = 0) {
+  if (S.mudo) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') AC.resume();
+    const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + atraso;
+    o.type = tipo; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + .03);
+  } catch {}
+}
+const apitinho = () => { tom(2300, .13, .3, 'triangle'); tom(2700, .2, .3, 'triangle', .16); };
+const clique = () => tom(1700, .035, .35, 'square');
+const apitoFinal = () => { tom(2200, .35, .35, 'triangle'); tom(2200, .35, .35, 'triangle', .45); tom(2500, .8, .35, 'triangle', .9); };
+
+let wake = null;
+async function wakeLigar(on) {
+  try {
+    if (on && !wake && navigator.wakeLock) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => wake = null); }
+    if (!on && wake) { await wake.release(); wake = null; }
+  } catch {}
+}
+const rodando = () => Object.keys(S.tm).filter(k => S.tm[k].end);
+function pausar(k) { const t = tinfo(k); if (t.end) { t.rest = resta(k); t.end = null; } atualizarTimer(k); }
+function pararTodos() { rodando().forEach(pausar); wakeLigar(false); }
+function pararRodada(ri) { Object.keys(S.tm).filter(k => k.startsWith(ri + '-')).forEach(pausar); }
+
+function timerAcao(k, acao) {
+  const t = tinfo(k);
+  if (acao === 'play') {
+    if (t.end) pausar(k);
+    else {
+      if (t.rest <= 0) t.rest = t.dur = S.dur;
+      rodando().forEach(pausar);
+      t.end = Date.now() + t.rest * 1000; RT[k] = { a30: t.rest <= 30, nx: 0 };
+      if (!S.scores[k] || S.scores[k][0] === '') { S.scores[k] = [0, 0]; atualizarTabela(); sincPlacar(k); }
+      tom(1, .01, .0001); wakeLigar(true);    // destrava o áudio no gesto do usuário
+    }
+  } else if (acao === 'reset') { t.end = null; t.rest = t.dur = S.dur; delete RT[k]; }
+  else {
+    const d = acao === '+30' ? 30 : -30;
+    if (t.end) { t.end = Math.max(Date.now() + 1, t.end + d * 1000); RT[k] = { a30: resta(k) <= 30, nx: 0 }; }
+    else { t.rest = Math.max(0, t.rest + d); t.dur = Math.max(t.dur, t.rest); }
+  }
+  salvar(); atualizarTimer(k);
+}
+function sincPlacar(k) {
+  const [x, y] = placar(S.scores[k]);
+  document.querySelectorAll(`.partida[data-k="${k}"] output`).forEach((o, i) => o.textContent = i ? y : x);
+}
+setInterval(() => {
+  const ks = rodando(); if (!ks.length) { if (wake) wakeLigar(false); return; }
+  const agora = Date.now();
+  ks.forEach(k => {
+    const t = S.tm[k], r = resta(k); RT[k] = RT[k] || { a30: r <= 30, nx: 0 };
+    if (r <= 0) {
+      const velho = agora - t.end > 3000; t.end = null; t.rest = 0; delete RT[k]; salvar();
+      if (!velho) apitoFinal();
+    } else {
+      if (!RT[k].a30 && r <= 30) { RT[k].a30 = true; apitinho(); }
+      if (r <= 15 && agora >= RT[k].nx) { clique(); RT[k].nx = agora + (0.1 + 0.9 * Math.pow(r / 15, 1.4)) * 1000; }
+    }
+    atualizarTimer(k);
+  });
+}, 50);
 
 function tudo() { salvar(); desenharJogadores(); desenharCorpo(); }
 
@@ -286,30 +403,38 @@ $('acoes').addEventListener('click', e => {
     S.rounds = gerar(S.players.map(p => p.id), S.volta); S.scores = {}; S.saved = {}; S.started = true; tudo();
   }
   if (id === 'reiniciar' && confirm('Reiniciar? Todos os resultados e o calendário serão apagados (os jogadores ficam).')) {
-    S = { ...novo(), players: S.players.map(p => ({ ...p, out: false })), next: S.next, volta: S.volta }; tudo();
+    pararTodos(); S = { ...novo(), players: S.players.map(p => ({ ...p, out: false })), next: S.next, volta: S.volta, dur: S.dur, mudo: S.mudo }; tudo();
   }
 });
 $('acoes').addEventListener('change', e => { if (e.target.id === 'volta') { S.volta = e.target.checked; salvar(); } });
 
-$('corpo').addEventListener('input', e => {
-  const el = e.target; if (!el.dataset.k) return;
-  el.value = el.value.replace(/\D/g, '').slice(0, 2);
-  const v = S.scores[el.dataset.k] || ['', '']; v[+el.dataset.s] = el.value; S.scores[el.dataset.k] = v; salvar();
-});
 $('corpo').addEventListener('change', e => {
   const z = e.target.dataset.z; if (!z) return;
   S[z] = Math.max(0, parseInt(e.target.value) || 0); tudo();
 });
+$('corpo').addEventListener('change', e => {
+  if (e.target.id !== 'durMin') return;
+  const sg = Math.max(30, Math.round((parseFloat(String(e.target.value).replace(',', '.')) || 3) * 60)), antigo = S.dur;
+  S.dur = sg; Object.values(S.tm).forEach(t => { if (!t.end && t.rest === t.dur) t.rest = t.dur = sg; });
+  e.target.value = sg / 60; salvar(); atualizarTimers();
+});
 $('corpo').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b || !b.dataset.a) return;
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'mudo') { S.mudo = !S.mudo; b.textContent = S.mudo ? '🔇 Sem som' : '🔊 Com som'; return salvar(); }
+  if (b.dataset.g) {
+    const k = b.dataset.g, v = placar(S.scores[k]), sd = +b.dataset.s;
+    v[sd] = Math.max(0, Math.min(99, v[sd] + +b.dataset.d)); S.scores[k] = v; salvar(); sincPlacar(k); atualizarTabela(); return;
+  }
+  if (b.dataset.tm) return timerAcao(b.closest('.timer').dataset.t, b.dataset.tm);
+  if (!b.dataset.a) return;
   const ri = +b.dataset.r;
   if (b.dataset.a === 'grav') {
     const falta = S.rounds[ri].jogos.some(([x, y], ji) => {
       if (P(x).out || P(y).out) return false;
       const v = S.scores[ri + '-' + ji]; return !v || v[0] === '' || v[1] === '';
     });
-    if (falta) return alert('Preencha o placar de todos os jogos da rodada antes de gravar.');
-    S.saved[ri] = true;
+    if (falta) return alert('Falta o placar de algum jogo. Use ▲ ▼ (nem que seja 0 × 0) ou inicie o cronômetro.');
+    pararRodada(ri); S.saved[ri] = true;
   } else delete S.saved[ri];
   tudo();
 });
