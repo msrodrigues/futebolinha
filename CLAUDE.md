@@ -15,7 +15,7 @@ Projeto separado do app de escala (`../hcpa/escala`).
 - `escudos/<arquivo>.png`: ~120–160 px. Sem arquivo, aparece o escudo desenhado.
 - `sw.js`, `manifest.webmanifest`, `icon*.png`, `apple-touch-icon.png`: PWA (offline e instalável).
   O app é guardado na instalação; cada escudo é guardado na primeira vez que aparece.
-  Ao mudar qualquer arquivo, aumente `CACHE` em `sw.js` (hoje `futebolinha-v4`).
+  Ao mudar qualquer arquivo, aumente `CACHE` em `sw.js` (hoje `futebolinha-v5`).
 
 ## Regras do jogo
 - Vitória 3, empate 1, derrota 0. Desempate: pontos, vitórias, saldo, gols pró. Coluna Apr. = aproveitamento.

@@ -285,7 +285,7 @@ const mmss = sg => { sg = Math.ceil(sg); return String(Math.floor(sg / 60)).padS
 function timerHTML(k, dis) {
   return `<div class="timer" data-t="${k}"><button class="tplay" data-tm="play" ${dis}>▶</button><button data-tm="reset" ${dis} aria-label="Zerar cronômetro">↺</button>
     <span class="tt">${mmss(S.dur)}</span><div class="tbar"><i></i></div>
-    <button class="mini" data-tm="-30" ${dis}>−30s</button><button class="mini" data-tm="+30" ${dis}>+30s</button></div>`;
+    <button class="mini" data-tm="-10" ${dis}>−10s</button><button class="mini" data-tm="+10" ${dis}>+10s</button></div>`;
 }
 function atualizarTimer(k) {
   const el = document.querySelector(`.timer[data-t="${k}"]`); if (!el) return;
@@ -340,7 +340,7 @@ function timerAcao(k, acao) {
     }
   } else if (acao === 'reset') { t.end = null; t.rest = t.dur = S.dur; delete RT[k]; }
   else {
-    const d = acao === '+30' ? 30 : -30;
+    const d = acao === '+10' ? 10 : -10;
     if (t.end) { t.end = Math.max(Date.now() + 1, t.end + d * 1000); RT[k] = { a30: resta(k) <= 30, nx: 0 }; }
     else { t.rest = Math.max(0, t.rest + d); t.dur = Math.max(t.dur, t.rest); }
   }
