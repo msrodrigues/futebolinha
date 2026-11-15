@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffd400">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Futebolinha">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Campeonato Brasileiro de Futebolinha</title>
+<style>
+  :root { --bg:#2fb350; --card:#fff; --tx:#12301c; --mut:#5d7a66; --bd:#cfe6d5; --ac:#0a5fe0; --hl:#fff3a8; --dg:#d62f1f; --ink:#0d3b1e; --az:#0a3d91; --am:#ffd400; }
+  * { box-sizing:border-box }
+  body { margin:0; font:16px/1.4 ui-rounded,"Nunito","Trebuchet MS",system-ui,sans-serif; font-weight:600; color:var(--tx); padding:max(14px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent;
+    background:repeating-linear-gradient(90deg,#33bb56 0 56px,#2aa84b 56px 112px) fixed; }
+  .pagina { max-width:780px; margin-inline:auto }
+  /* título */
+  header { text-align:center; background:var(--am); border:4px solid var(--ink); border-radius:26px; box-shadow:0 7px 0 var(--ink); padding:14px 10px 12px; margin:6px 0 22px; position:relative; overflow:hidden }
+  header:before, header:after { content:"⚽"; position:absolute; font-size:44px; top:50%; transform:translateY(-50%) rotate(-15deg) }
+  header:before { left:12px } header:after { right:12px; transform:translateY(-50%) rotate(20deg) }
+  h1 { margin:0; line-height:1; color:var(--az) }
+  h1 small { display:block; font-size:clamp(13px,3.6vw,19px); font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--ink) }
+  h1 b { display:block; font-size:clamp(32px,10vw,60px); font-weight:900; letter-spacing:.02em; text-transform:uppercase; color:#fff; -webkit-text-stroke:2px var(--az); paint-order:stroke fill; text-shadow:3px 4px 0 var(--az) }
+  h2 { display:inline-block; font-size:17px; font-weight:900; margin:20px 0 10px; padding:5px 16px; background:#fff; color:var(--az); border:3px solid var(--ink); border-radius:999px; box-shadow:0 3px 0 var(--ink); transform:rotate(-1.5deg) }
+  .card { background:var(--card); border:3px solid var(--ink); border-radius:20px; box-shadow:0 5px 0 var(--ink); padding:10px; overflow-x:auto; margin-bottom:14px }
+  table { border-collapse:separate; border-spacing:0; width:100% }
+  th,td { padding:9px 6px; text-align:center; white-space:nowrap }
+  th { background:var(--az); color:#fff; font-weight:800; font-size:13px }
+  th:first-child { border-radius:12px 0 0 12px } th:last-child { border-radius:0 12px 12px 0 }
+  td.nome, th.nome { text-align:left }
+  tbody td { border-bottom:2px dashed var(--bd) }
+  tr.lider td { background:var(--hl); font-weight:900 }
+  tr.saiu td { opacity:.45 }
+  tr.lib td { background:#e4f0ff } tr.reb td { background:#ffe6e3 }
+  tr.lib.lider td { background:var(--hl) }
+  tr.lib td:first-child { box-shadow:inset 6px 0 0 #1e6fd9 }
+  tr.reb td:first-child { box-shadow:inset 6px 0 0 #d93025 }
+  td:first-child { font-size:18px }
+  td.pts { font-weight:900; font-size:18px; color:var(--az) }
+  .leg { display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:14px; font-weight:800; padding:10px 14px; background:rgba(255,255,255,.95); border:3px solid var(--ink); border-radius:16px }
+  .leg i { display:inline-block; width:14px; height:14px; border-radius:5px; margin-right:5px; vertical-align:-2px }
+  .leg input { width:54px; padding:4px; font:inherit; font-weight:900; color:var(--tx); background:#fff; border:3px solid var(--az); border-radius:10px; text-align:center }
+  .tn { display:inline-flex; align-items:center; gap:7px; vertical-align:middle; font-weight:800 }
+  .jogo { display:grid; grid-template-columns:1fr 54px 16px 54px 1fr; gap:6px; align-items:center; padding:8px 4px }
+  .jogo+.jogo, .folga { border-top:2px dashed var(--bd) }
+  .jogo .c { text-align:right } .jogo .f { text-align:left } .jogo .x { text-align:center; color:var(--mut); font-weight:900 }
+  .jogo .c .tn { flex-direction:row-reverse }
+  .jogo.anulado { opacity:.4; text-decoration:line-through }
+  .folga { color:var(--mut); font-size:14px; padding:8px 4px 2px }
+  input[type=text] { width:54px; padding:7px 2px; text-align:center; font:inherit; font-size:20px; font-weight:900; color:var(--az); background:#fff; border:3px solid var(--az); border-radius:12px }
+  input[type=text]:focus { outline:none; border-color:#ff7a00; box-shadow:0 0 0 3px #ffd9b0 }
+  input[type=text]:disabled { background:#eef3ff; opacity:.8 }
+  .rodcab { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:4px 6px 10px; margin:-10px -10px 4px; background:#e9f6ff; border-bottom:3px solid var(--ink); border-radius:16px 16px 0 0; padding:10px 14px }
+  .ok { color:#0a8f3c; font-weight:900; font-size:14px }
+  .rod, .mut { color:var(--mut); font-size:13px }
+  body > .pagina > p.rod { color:#fff; font-weight:700; text-shadow:0 1px 2px rgba(0,0,0,.45); font-size:14px }
+  #corpo p.rod { color:#fff; font-weight:700; text-shadow:0 1px 2px rgba(0,0,0,.45) }
+  button, select { font:inherit; font-weight:800; padding:8px 14px; border-radius:14px; border:3px solid var(--ink); background:#fff; color:var(--tx); cursor:pointer; box-shadow:0 3px 0 var(--ink) }
+  button:active { transform:translateY(3px); box-shadow:none }
+  button:disabled { opacity:.5; cursor:not-allowed }
+  button.pri { background:#ff7a00; color:#fff; text-shadow:0 1px 0 rgba(0,0,0,.25) }
+  button.dg { color:var(--dg) }
+  select { max-width:100%; box-shadow:none }
+  .lin { display:flex; align-items:center; gap:6px; padding:8px 4px; flex-wrap:nowrap }
+  .lin svg, .lin > span { flex:none }
+  .lin select { flex:1 1 0; min-width:0; padding:8px 6px; text-overflow:ellipsis }
+  .lin button { flex:none; padding:8px 10px; white-space:nowrap }
+  .lin+.lin { border-top:2px dashed var(--bd) }
+  .lin input.nm { flex:1 1 0; min-width:0; width:auto; text-align:left; padding:8px 10px; font-size:16px }
+  .bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; color:#fff; font-weight:800; text-shadow:0 1px 2px rgba(0,0,0,.4) }
+  .bar button { text-shadow:none }
+  .bar label { display:inline-flex; align-items:center; gap:6px }
+  button, select, input:not([type=checkbox]) { touch-action:manipulation; min-height:40px }
+  @media (min-width:900px) { .pagina { max-width:960px } body { font-size:17px } }
+</style>
+</head>
+<body>
+<div class="pagina">
+<header><h1><small>Campeonato Brasileiro de</small><b>Futebolinha</b></h1></header>
+
+<h2>👥 Os craques</h2>
+<div class="card" id="jog"></div>
+<div class="bar" id="acoes"></div>
+
+<div id="corpo"></div>
+
+<h2>💾 Guardar</h2>
+<div class="bar">
+  <button id="exp">Exportar JSON</button>
+  <button id="imp">Importar JSON</button>
+  <input type="file" id="arq" accept=".json" hidden>
+</div>
+<p class="rod">Os resultados ficam gravados neste navegador. Use a exportação para guardar uma cópia ou levar para outro aparelho.</p>
+
+</div>
+<script src="times.js"></script>
+<script>
+const KEY = 'campeonato-pc-v2';
+const novo = () => ({ players: [], started: false, volta: true, rounds: [], scores: {}, saved: {}, next: 1 });
+let S = JSON.parse(localStorage.getItem(KEY) || 'null') || novo();
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const P = id => S.players.find(p => p.id === id);
+const salvar = () => localStorage.setItem(KEY, JSON.stringify(S));
+
+function corTime(t) {
+  if (!t || t[2]) return t;
+  let h = 0; for (const c of t[0]) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return [t[0], t[1], `hsl(${h} 45% 38%)`, '#fff', t[4], t[5], t[6]];
+}
+function escudo(ti, s = 26) {
+  const t = corTime(TIMES[ti]);
+  if (!t) return `<svg width="${s}" height="${s}" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="#999" stroke-dasharray="3 3" stroke-width="2"/><text x="20" y="25" text-anchor="middle" font-size="14" fill="#999" font-family="system-ui">?</text></svg>`;
+  // Usa escudos/SIGLA.png (ex.: escudos/FLA.png) se existir; senão, o escudo desenhado
+  const svg = `<svg width="${s}" height="${s}" viewBox="0 0 40 40" role="img" aria-label="${esc(t[0])}"><circle cx="20" cy="20" r="17.5" fill="${t[2]}" stroke="${t[3]}" stroke-width="3"/><text x="20" y="24.5" text-anchor="middle" font-size="${t[1].length > 2 ? 11 : 13}" font-weight="800" fill="${t[3]}" font-family="system-ui,sans-serif">${t[1]}</text></svg>`;
+  return `<span style="display:inline-flex;width:${s}px;height:${s}px;position:relative">${svg}<img src="escudos/${t[5]}.png" alt="${esc(t[0])}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain" onload="this.previousElementSibling.style.display='none'" onerror="this.remove()"></span>`;
+}
+const tag = id => { const p = P(id); return p ? `<span class="tn">${escudo(p.team, 22)}<span>${esc(p.name)}</span></span>` : '?'; };
+
+// Método do círculo; ímpar → folga
+function gerar(ids, volta) {
+  const arr = [...ids]; if (arr.length % 2) arr.push(null);
+  const n = arr.length, turno = [];
+  for (let r = 0; r < n - 1; r++) {
+    const jogos = []; let folga = null;
+    for (let i = 0; i < n / 2; i++) {
+      const a = arr[i], b = arr[n - 1 - i];
+      if (a === null) folga = b; else if (b === null) folga = a;
+      else jogos.push(r % 2 ? [b, a] : [a, b]);
+    }
+    turno.push({ jogos, folga });
+    arr.splice(1, 0, arr.pop());
+  }
+  turno.forEach(t => t.lbl = 'Turno');
+  return volta ? [...turno, ...turno.map(t => ({ lbl: 'Returno', folga: t.folga, jogos: t.jogos.map(([a, b]) => [b, a]) }))] : turno;
+}
+
+// Jogador que entra no meio: joga contra cada adversário em rodadas extras no fim do calendário
+function rodadasExtras(novoId) {
+  const adv = S.players.filter(p => p.id !== novoId && !p.out);
+  const lbl = 'Entrada de ' + P(novoId).name;
+  const ida = adv.map((o, i) => ({ lbl, folga: null, jogos: [i % 2 ? [o.id, novoId] : [novoId, o.id]] }));
+  return S.volta ? [...ida, ...ida.map(r => ({ lbl, folga: null, jogos: [[r.jogos[0][1], r.jogos[0][0]]] }))] : ida;
+}
+
+function classificar() {
+  const t = Object.fromEntries(S.players.map(p => [p.id, { id: p.id, out: p.out, J:0, V:0, E:0, D:0, GP:0, GC:0 }]));
+  S.rounds.forEach((r, ri) => {
+    if (!S.saved[ri]) return;
+    r.jogos.forEach(([a, b], ji) => {
+      if (P(a).out || P(b).out) return;
+      const v = S.scores[ri + '-' + ji]; if (!v || v[0] === '' || v[1] === '') return;
+      const x = +v[0], y = +v[1];
+      t[a].J++; t[b].J++; t[a].GP += x; t[a].GC += y; t[b].GP += y; t[b].GC += x;
+      if (x > y) { t[a].V++; t[b].D++; } else if (x < y) { t[b].V++; t[a].D++; } else { t[a].E++; t[b].E++; }
+    });
+  });
+  const nm = o => P(o.id).name;
+  return Object.values(t).map(o => ({ ...o, SG: o.GP - o.GC, P: o.V * 3 + o.E }))
+    .sort((a, b) => a.out - b.out || b.P - a.P || b.V - a.V || b.SG - a.SG || b.GP - a.GP || nm(a).localeCompare(nm(b)));
+}
+
+function desenharJogadores() {
+  const usados = new Set(S.players.filter(p => p.team !== null).map(p => p.team));
+  $('jog').innerHTML = S.players.length ? S.players.map(p => `
+    <div class="lin" style="${p.out ? 'opacity:.5' : ''}">
+      ${escudo(p.team, 30)}
+      <input type="text" class="nm" data-id="${p.id}" data-f="name" value="${esc(p.name)}" maxlength="20">
+      <select data-id="${p.id}" data-f="team">
+        <option value="">— time —</option>
+        ${['A','B','C','D'].map(sr => `<optgroup label="Série ${sr}">${TIMES.map((t, i) => t[4] !== sr ? '' : `<option value="${i}" ${p.team === i ? 'selected' : ''} ${usados.has(i) && p.team !== i ? 'disabled' : ''}>${t[0]}${t[6] ? ' (' + t[6] + ')' : ''}</option>`).join('')}</optgroup>`).join('')}
+      </select>
+      ${S.started
+        ? (p.out ? `<button data-id="${p.id}" data-f="volta">Reativar</button>` : `<button class="dg" data-id="${p.id}" data-f="sair">Remover</button>`)
+        : `<button class="dg" data-id="${p.id}" data-f="del">✕</button>`}
+    </div>`).join('') : '<div class="mut" style="padding:6px">Nenhum jogador ainda.</div>';
+  $('jog').innerHTML += `<div class="lin"><input type="text" class="nm" id="novoNome" placeholder="${S.started ? 'Novo jogador (entra no meio, sem pontos)' : 'Nome do jogador'}" maxlength="20"><button id="add">➕ Adicionar</button></div>`;
+  $('acoes').innerHTML = S.started
+    ? `<button class="dg" id="reiniciar">Reiniciar campeonato</button>`
+    : `<label><input type="checkbox" id="volta" ${S.volta ? 'checked' : ''}> Turno e returno</label>
+       <button id="sortear">🎲 Sortear ordem</button>
+       <button class="pri" id="iniciar" ${S.players.length < 2 ? 'disabled' : ''}>🚀 Começar!</button>`;
+}
+
+// Tamanho das zonas: padrão ≈ 1/5 dos jogadores (20 → 4), ajustável; nunca se sobrepõem
+function zonas() {
+  const n = S.players.filter(p => !p.out).length, pad = Math.max(1, Math.round(n / 5));
+  let lib = Math.max(0, Math.min(S.zLib ?? pad, n));
+  let reb = Math.max(0, Math.min(S.zReb ?? pad, n - lib));
+  return { lib, reb };
+}
+
+function desenharCorpo() {
+  if (!S.started) { $('corpo').innerHTML = ''; return; }
+  const Z = zonas(), nAt = S.players.filter(p => !p.out).length;
+  const zona = (o, i) => o.out ? '' : i < Z.lib ? 'lib' : i >= nAt - Z.reb ? 'reb' : '';
+  const linhas = classificar().map((o, i) => `<tr class="${o.out ? 'saiu' : (i === 0 && o.J ? 'lider ' : '') + zona(o, i)}">
+    <td>${o.out ? '–' : (o.J && i < 3 ? ['🥇','🥈','🥉'][i] : i + 1)}</td><td class="nome">${tag(o.id)}${o.out ? ' <span class="mut">(saiu)</span>' : ''}</td><td class="pts">${o.P}</td>
+    <td>${o.J}</td><td>${o.V}</td><td>${o.E}</td><td>${o.D}</td><td>${o.GP}</td><td>${o.GC}</td><td>${o.SG > 0 ? '+' : ''}${o.SG}</td><td>${o.J ? Math.round(o.P / (3 * o.J) * 100) + '%' : '–'}</td></tr>`).join('');
+  $('corpo').innerHTML = `
+    <h2>🏆 Tabela</h2>
+    <div class="card"><table id="tab"><thead><tr><th>#</th><th class="nome">Jogador</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Apr.</th></tr></thead><tbody>${linhas}</tbody></table></div>
+    <div class="leg"><span><i style="background:#1e6fd9"></i>Libertadores: <input type="number" min="0" max="${nAt}" data-z="zLib" value="${Z.lib}"> primeiros</span>
+      <span><i style="background:#d93025"></i>Rebaixamento: <input type="number" min="0" max="${nAt}" data-z="zReb" value="${Z.reb}"> últimos</span></div>
+    <p class="rod">Vitória 3 · Empate 1 · Derrota 0. Só contam rodadas gravadas. Desempate: pontos, vitórias, saldo, gols pró.</p>
+    <h2>⚽ Rodadas</h2><div id="rodadas">${S.rounds.map(rodadaHTML).join('')}</div>`;
+}
+
+function rodadaHTML(r, ri) {
+  const gravada = !!S.saved[ri];
+  const jogos = r.jogos.map(([a, b], ji) => {
+    const anul = P(a).out || P(b).out, v = S.scores[ri + '-' + ji] || ['', ''], dis = gravada || anul ? 'disabled' : '';
+    return `<div class="jogo ${anul ? 'anulado' : ''}"><span class="c">${tag(a)}</span>
+      <input type="text" inputmode="numeric" data-k="${ri}-${ji}" data-s="0" value="${v[0]}" ${dis}>
+      <span class="x">×</span>
+      <input type="text" inputmode="numeric" data-k="${ri}-${ji}" data-s="1" value="${v[1]}" ${dis}>
+      <span class="f">${tag(b)}</span></div>`;
+  }).join('');
+  return `<div class="card"><div class="rodcab"><span><strong>Rodada ${ri + 1}</strong> <span class="rod">${esc(r.lbl || '')}</span></span>
+    ${gravada ? `<span><span class="ok">✓ gravada</span> <button data-r="${ri}" data-a="edit">Editar</button></span>` : `<button class="pri" data-r="${ri}" data-a="grav">⚽ Gravar rodada</button>`}</div>
+    ${jogos}${r.folga ? `<div class="folga">Folga: ${tag(r.folga)}</div>` : ''}</div>`;
+}
+
+function tudo() { salvar(); desenharJogadores(); desenharCorpo(); }
+
+// ---- eventos ----
+$('jog').addEventListener('change', e => {
+  const el = e.target, id = +el.dataset.id; if (!el.dataset.f) return;
+  const p = P(id);
+  if (el.dataset.f === 'name') p.name = el.value.trim() || p.name;
+  if (el.dataset.f === 'team') p.team = el.value === '' ? null : +el.value;
+  tudo();
+});
+$('jog').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'add') return adicionar();
+  const id = +b.dataset.id, p = P(id), f = b.dataset.f;
+  if (f === 'del') S.players = S.players.filter(x => x.id !== id);
+  else if (f === 'sair') {
+    if (!confirm(`Remover ${p.name} do campeonato?\n\nOs jogos dele(a) ficam anulados e saem da classificação. Dá para reativar depois.`)) return;
+    p.out = true;
+  } else if (f === 'volta') p.out = false;
+  tudo();
+});
+$('jog').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'novoNome') adicionar(); });
+function adicionar() {
+  const nome = $('novoNome').value.trim(); if (!nome) return;
+  const p = { id: S.next++, name: nome, team: null, out: false };
+  S.players.push(p);
+  if (S.started) S.rounds.push(...rodadasExtras(p.id));
+  tudo(); $('novoNome').focus();
+}
+
+$('acoes').addEventListener('click', e => {
+  const id = e.target.id;
+  if (id === 'sortear') { S.players.sort(() => Math.random() - .5); tudo(); }
+  if (id === 'iniciar') {
+    S.rounds = gerar(S.players.map(p => p.id), S.volta); S.scores = {}; S.saved = {}; S.started = true; tudo();
+  }
+  if (id === 'reiniciar' && confirm('Reiniciar? Todos os resultados e o calendário serão apagados (os jogadores ficam).')) {
+    S = { ...novo(), players: S.players.map(p => ({ ...p, out: false })), next: S.next, volta: S.volta }; tudo();
+  }
+});
+$('acoes').addEventListener('change', e => { if (e.target.id === 'volta') { S.volta = e.target.checked; salvar(); } });
+
+$('corpo').addEventListener('input', e => {
+  const el = e.target; if (!el.dataset.k) return;
+  el.value = el.value.replace(/\D/g, '').slice(0, 2);
+  const v = S.scores[el.dataset.k] || ['', '']; v[+el.dataset.s] = el.value; S.scores[el.dataset.k] = v; salvar();
+});
+$('corpo').addEventListener('change', e => {
+  const z = e.target.dataset.z; if (!z) return;
+  S[z] = Math.max(0, parseInt(e.target.value) || 0); tudo();
+});
+$('corpo').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || !b.dataset.a) return;
+  const ri = +b.dataset.r;
+  if (b.dataset.a === 'grav') {
+    const falta = S.rounds[ri].jogos.some(([x, y], ji) => {
+      if (P(x).out || P(y).out) return false;
+      const v = S.scores[ri + '-' + ji]; return !v || v[0] === '' || v[1] === '';
+    });
+    if (falta) return alert('Preencha o placar de todos os jogos da rodada antes de gravar.');
+    S.saved[ri] = true;
+  } else delete S.saved[ri];
+  tudo();
+});
+
+$('exp').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }));
+  a.download = 'campeonato.json'; a.click();
+};
+$('imp').onclick = () => $('arq').click();
+$('arq').onchange = async e => {
+  try {
+    const d = JSON.parse(await e.target.files[0].text());
+    if (!Array.isArray(d.players) || !Array.isArray(d.rounds)) throw 0;
+    S = { ...novo(), ...d }; tudo();
+  } catch { alert('Arquivo inválido.'); }
+  e.target.value = '';
+};
+
+tudo();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>

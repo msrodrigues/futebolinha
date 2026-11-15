@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" fill="#2fb350"/>
+<rect x="0" y="0" width="128" height="512" fill="#33bb56"/><rect x="256" y="0" width="128" height="512" fill="#33bb56"/>
+<circle cx="256" cy="256" r="150" fill="#fff" stroke="#0d3b1e" stroke-width="14"/>
+<polygon points="256,196 306,232 287,291 225,291 206,232" fill="#0d3b1e"/>
+<g stroke="#0d3b1e" stroke-width="12" stroke-linecap="round"><line x1="256" y1="196" x2="256" y2="108"/><line x1="306" y1="232" x2="390" y2="204"/><line x1="287" y1="291" x2="340" y2="364"/><line x1="225" y1="291" x2="172" y2="364"/><line x1="206" y1="232" x2="122" y2="204"/></g>
+<rect x="40" y="410" width="432" height="62" rx="31" fill="#ffd400" stroke="#0d3b1e" stroke-width="8"/>
+<text x="256" y="455" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="40" fill="#0a3d91">FUTEBOLINHA</text>
+</svg>
