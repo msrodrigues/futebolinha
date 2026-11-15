@@ -15,11 +15,11 @@ Projeto separado do app de escala (`../hcpa/escala`).
 - `escudos/<arquivo>.png`: ~120–160 px. Sem arquivo, aparece o escudo desenhado.
 - `sw.js`, `manifest.webmanifest`, `icon*.png`, `apple-touch-icon.png`: PWA (offline e instalável).
   O app é guardado na instalação; cada escudo é guardado na primeira vez que aparece.
-  Ao mudar qualquer arquivo, aumente `CACHE` em `sw.js` (hoje `futebolinha-v6`).
+  Ao mudar qualquer arquivo, aumente `CACHE` em `sw.js` (hoje `futebolinha-v7`).
 
 ## Regras do jogo
 - Tudo é salvo sozinho (localStorage). Não há botão de gravar. Rodada mostra "✓ completa" quando todos os jogos têm placar.
-- Dois modos (`S.modo`): `liga` (pontos corridos) e `mata` (chaveamento).
+- Três modos (`S.modo`): `liga` (pontos corridos), `mata` (chaveamento) e `copa` (grupos todos contra todos + mata-mata).
 - **Liga**: vitória 3, empate 1, derrota 0; desempate pontos, vitórias, saldo, gols pró; coluna Apr. = aproveitamento.
   Tabela ao vivo: conta todo jogo com placar (▲▼ ou cronômetro iniciado = 0×0). Calendário pelo método do círculo.
   "Turno e returno" pode ser ligado/desligado a qualquer hora (`ajustarVolta`; rodadas de volta têm `v:true`; as que já têm placar ficam).
@@ -28,6 +28,10 @@ Projeto separado do app de escala (`../hcpa/escala`).
 - **Mata-mata**: `S.chave` = ids na ordem de sorteio (cabeças de chave; folgas para quem sobra até potência de 2).
   Vencedor calculado por `venc(r,i)`; empate no tempo normal → pênaltis (`S.pens`), sem pênaltis desempatados o jogo fica em aberto.
   Mudar um resultado que troca o vencedor apaga os jogos seguintes (`limparAdiante`). Jogador removido = W.O. Não entra jogador novo depois de começar.
+- **Copa**: `S.grupos` (distribuição em serpentina pela ordem), `nGrupos`/`nClass` editáveis (padrão ≈ n/4 grupos, 2 passam).
+  Jogos dos grupos em `S.rounds` (uma rodada junta um jogo de cada grupo). Quando todos os jogos têm placar, `sincronizarCopa`
+  monta `S.chave` com os classificados (1º de cada grupo, depois 2º…, cruzando grupos); se um placar de grupo mudar e a chave mudar,
+  os jogos do mata-mata são apagados. Não entra jogador novo depois de começar.
 - Placar por botões − / + (0–99). Só o jogo em foco (`S.foco`, toque no cartão) mostra o cronômetro: regressivo (padrão 3 min,
   `S.dur`, editável), barra, ±10 s, apito aos 30 s, cliques cada vez mais rápidos nos últimos 15 s e apito final.
   Só um cronômetro roda por vez. Estado em `S.tm`.
