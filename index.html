@@ -152,6 +152,19 @@
   .gtag { font-size:11px; font-weight:900; color:var(--mut); text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px }
   tr.cls td { background:#e8f8ec } tr.cls td:first-child { box-shadow:inset 6px 0 0 #2fb350 }
   .bar input[type=number] { width:66px; padding:6px; font:inherit; font-weight:900; color:var(--tx); background:#fff; border:3px solid var(--az); border-radius:10px; text-align:center }
+  .av { display:inline-flex; align-items:center; justify-content:center; border-radius:50%; object-fit:cover; background:#fff3a8; border:2px solid var(--ink); flex:none; line-height:1 }
+  .avbtn { width:42px; height:42px; min-height:42px !important; padding:0; border-radius:50%; font-size:22px; flex:none !important; display:inline-flex; align-items:center; justify-content:center; background:#fff3a8; overflow:hidden }
+  .avbtn .av { border:0 }
+  #avatar { position:fixed; inset:0; z-index:60; background:rgba(8,40,18,.7); display:flex; align-items:center; justify-content:center; padding:16px }
+  #avatar[hidden] { display:none }
+  .avbox { background:#f1fff4; border:4px solid var(--ink); border-radius:24px; max-width:420px; width:100%; padding:14px }
+  .avbox .sel-tit { display:flex; justify-content:space-between; align-items:center; font-weight:900; color:var(--az); font-size:18px; margin-bottom:10px }
+  .avgrade { display:grid; grid-template-columns:repeat(7,1fr); gap:6px }
+  .avem { font-size:26px; padding:4px 0; min-height:44px !important; border-radius:12px; box-shadow:0 2px 0 var(--ink) }
+  .hlin { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 4px; border-top:2px dashed var(--bd) }
+  .hlin .mini { padding:2px 8px; font-size:13px }
+  .tit-camp { display:flex; flex-wrap:wrap; gap:8px; padding:4px 2px 10px }
+  .chipc { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:var(--am); border:3px solid var(--ink); border-radius:999px; font-weight:800 }
 </style>
 </head>
 <body>
@@ -164,6 +177,8 @@
 
 <div id="corpo"></div>
 
+<div id="hist"></div>
+
 <h2>📦 Levar para outro aparelho</h2>
 <div class="bar">
   <button id="exp">📤 Salvar uma cópia</button>
@@ -172,6 +187,14 @@
 </div>
 <p class="rod">O campeonato já fica salvo sozinho neste aparelho. Para jogar em outro celular ou tablet, toque em "Salvar uma cópia" (vira um arquivo) e, no outro aparelho, em "Abrir uma cópia".</p>
 
+</div>
+<div id="avatar" hidden>
+  <div class="avbox" role="dialog" aria-modal="true" aria-labelledby="avTit">
+    <div class="sel-tit"><span id="avTit">Foto</span><button id="avFechar" aria-label="Fechar">✕</button></div>
+    <div class="avgrade" id="avGrade"></div>
+    <div class="bar" style="margin-top:12px"><button class="pri" id="avFotoBtn">📷 Tirar ou escolher foto</button><button id="avSem">Sem foto</button></div>
+    <input type="file" id="avFoto" accept="image/*" hidden>
+  </div>
 </div>
 <div id="seletor" hidden>
   <div class="sel" role="dialog" aria-modal="true" aria-labelledby="selTit">
@@ -196,7 +219,7 @@ normalizar();
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const P = id => S.players.find(p => p.id === id);
-const salvar = () => localStorage.setItem(KEY, JSON.stringify(S));
+const salvar = () => { sincronizarHistorico(); localStorage.setItem(KEY, JSON.stringify(S)); };
 
 function corTime(t) {
   if (!t || t[2]) return t;
@@ -210,7 +233,7 @@ function escudo(ti, s = 26, lazy = false) {
   const svg = `<svg width="${s}" height="${s}" viewBox="0 0 40 40" role="img" aria-label="${esc(t[0])}"><circle cx="20" cy="20" r="17.5" fill="${t[2]}" stroke="${t[3]}" stroke-width="3"/><text x="20" y="24.5" text-anchor="middle" font-size="${t[1].length > 2 ? 11 : 13}" font-weight="800" fill="${t[3]}" font-family="system-ui,sans-serif">${t[1]}</text></svg>`;
   return `<span style="display:inline-flex;width:${s}px;height:${s}px;position:relative">${svg}<img src="escudos/${t[5]}.png" ${lazy ? 'loading="lazy"' : ''} alt="${esc(t[0])}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:${t[4] === 'WC' ? 'cover;border-radius:50%' : 'contain'}" onload="this.previousElementSibling.style.display='none'" onerror="this.remove()"></span>`;
 }
-const tag = id => { const p = P(id); return p ? `<span class="tn">${escudo(p.team, 22)}<span>${esc(p.name)}</span></span>` : '?'; };
+const tag = id => { const p = P(id); return p ? `<span class="tn">${avHTML(p, 22)}${escudo(p.team, 22)}<span>${esc(p.name)}</span></span>` : '?'; };
 
 // Método do círculo; ímpar → folga
 function gerar(ids, volta) {
@@ -258,9 +281,9 @@ function classificar(ids) {
 function desenharJogadores() {
   $('jog').innerHTML = S.players.length ? S.players.map(p => `
     <div class="lin" style="${p.out ? 'opacity:.5' : ''}">
-      ${escudo(p.team, 30)}
+      <button class="avbtn" data-id="${p.id}" data-f="av" aria-label="Foto do jogador">${p.av ? avHTML(p, 34) : '🙂'}</button>
       <input type="text" class="nm" data-id="${p.id}" data-f="name" value="${esc(p.name)}" maxlength="20">
-      <button class="tbtn" data-id="${p.id}" data-f="pick">${p.team !== null && TIMES[p.team] ? esc(TIMES[p.team][0]) : '⚽ Escolher time'}</button>
+      <button class="tbtn" data-id="${p.id}" data-f="pick">${p.team !== null && TIMES[p.team] ? escudo(p.team, 20) + ' ' + esc(TIMES[p.team][0]) : '⚽ Escolher time'}</button>
       ${S.started
         ? (p.out ? `<button data-id="${p.id}" data-f="volta">Reativar</button>` : `<button class="dg" data-id="${p.id}" data-f="sair">Remover</button>`)
         : `<button class="dg" data-id="${p.id}" data-f="del">✕</button>`}
@@ -337,14 +360,15 @@ function htmlTabela() {
   const linhas = classificar().map((o, i) => `<tr class="${o.out ? 'saiu' : (i === 0 && o.J ? 'lider ' : '') + zona(o, i)}">
     <td>${o.out ? '–' : (o.J && i < 3 ? ['🥇','🥈','🥉'][i] : i + 1)}</td><td class="nome">${tag(o.id)}${o.out ? ' <span class="mut">(saiu)</span>' : ''}</td><td class="pts">${o.P}</td>
     <td>${o.J}</td><td>${o.V}</td><td>${o.E}</td><td>${o.D}</td><td>${o.GP}</td><td>${o.GC}</td><td>${o.SG > 0 ? '+' : ''}${o.SG}</td><td>${o.J ? Math.round(o.P / (3 * o.J) * 100) + '%' : '–'}</td></tr>`).join('');
-  return `<div class="card"><table id="tab"><thead><tr><th>#</th><th class="nome">Jogador</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Apr.</th></tr></thead><tbody>${linhas}</tbody></table></div>
+  const camp = campeaoGeral(), ban = camp != null ? `<div class="campeao">🏆 Campeão: ${tag(camp)} 🎉</div>` : '';
+  return ban + `<div class="card"><table id="tab"><thead><tr><th>#</th><th class="nome">Jogador</th><th>Pts</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Apr.</th></tr></thead><tbody>${linhas}</tbody></table></div>
     <div class="leg"><span><i style="background:#1e6fd9"></i>Libertadores: <input type="number" min="0" max="${nAt}" data-z="zLib" value="${Z.lib}"> primeiros</span>
       <span><i style="background:#d93025"></i>Rebaixamento: <input type="number" min="0" max="${nAt}" data-z="zReb" value="${Z.reb}"> últimos</span></div>`;
 }
 function atualizarTabela() { const t = $('tabela'); if (t) t.innerHTML = S.modo === 'copa' ? htmlGrupos() : htmlTabela(); }
 
 const cfgHTML = () => `<div class="leg cfg"><label>⏱ Tempo de cada jogo: <input type="number" id="durMin" min="0.5" step="0.5" value="${S.dur / 60}"> min</label>
-  <button id="mudo">${S.mudo ? '🔇 Sem som' : '🔊 Com som'}</button></div>`;
+  <button id="mudo">${S.mudo ? '🔇 Sem som' : '🔊 Com som'}</button> <button id="compartilhar">📸 Compartilhar</button></div>`;
 
 function desenharCorpo() {
   if (!S.started) { $('corpo').innerHTML = ''; return; }
@@ -421,7 +445,7 @@ function venc(r, i) {
   const [x, y] = placar(S.scores[k]); if (x !== y) return x > y ? a : b;
   const [px, py] = placar(S.pens[k]); return px === py ? null : px > py ? a : b;
 }
-const campeao = () => venc(nRod() - 1, 0);
+const campeao = () => S.chave.length >= 2 ? venc(nRod() - 1, 0) : null;
 function limparAdiante(r, i) {
   if (r >= nRod()) return;
   const k = `m-${r}-${i}`;
@@ -577,7 +601,7 @@ setInterval(() => {
   });
 }, 50);
 
-function tudo() { sincronizarCopa(); salvar(); desenharJogadores(); desenharCorpo(); }
+function tudo() { sincronizarCopa(); salvar(); desenharJogadores(); desenharCorpo(); desenharHistorico(); }
 
 // ---- eventos ----
 $('jog').addEventListener('change', e => {
@@ -591,6 +615,7 @@ $('jog').addEventListener('click', e => {
   if (b.id === 'add') return adicionar();
   const id = +b.dataset.id, p = P(id), f = b.dataset.f;
   if (f === 'pick') return abrirSeletor(id);
+  if (f === 'av') return abrirAvatar(id);
   if (f === 'del') S.players = S.players.filter(x => x.id !== id);
   else if (f === 'sair') {
     if (!confirm(S.modo !== 'liga' ? `Tirar ${p.name} do torneio?\n\nOs jogos dele(a) na fase de grupos ficam anulados e, no mata-mata, o adversário avança sem jogar (W.O.). Dá para reativar depois.` : `Remover ${p.name} do campeonato?\n\nOs jogos dele(a) ficam anulados e saem da tabela. Dá para reativar depois.`)) return;
@@ -652,6 +677,7 @@ function atualizarSelo(k) { const ri = parseInt(k), el = document.querySelector(
 $('corpo').addEventListener('click', e => {
   const b = e.target.closest('button');
   if (b) {
+    if (b.id === 'compartilhar') return compartilhar();
     if (b.id === 'mudo') { S.mudo = !S.mudo; b.textContent = S.mudo ? '🔇 Sem som' : '🔊 Com som'; return salvar(); }
     if (b.dataset.g) return mudarPlacar(b);
     if (b.dataset.tm) return timerAcao(b.closest('.timer').dataset.t, b.dataset.tm);
@@ -665,7 +691,7 @@ $('corpo').addEventListener('click', e => {
 // Cópia do campeonato (arquivo) para levar a outro aparelho
 $('exp').onclick = () => {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 1)], { type: 'application/json' }));
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({ ...S, historico: histLer() }, null, 1)], { type: 'application/json' }));
   a.download = 'meu-campeonato-futebolinha.json'; a.click();
 };
 $('imp').onclick = () => $('arq').click();
@@ -673,11 +699,183 @@ $('arq').onchange = async e => {
   try {
     const d = JSON.parse(await e.target.files[0].text());
     if (!Array.isArray(d.players)) throw 0;
+    if (Array.isArray(d.historico)) { histSalvar(d.historico); delete d.historico; }
     pararTodos(); S = { ...novo(), ...d }; normalizar(); tudo();
   } catch { alert('Não consegui abrir esse arquivo. Ele precisa ser uma cópia salva pelo Futebolinha.'); }
   e.target.value = '';
 };
 
+
+// ---- fotos e emojis dos jogadores ----
+const EMOJIS = ['⚽','🦁','🐯','🦊','🐼','🐸','🦄','🐉','🦖','🐙','🦈','🐧','🦅','🐶','🐱','🐵','🤖','👽','🥷','🧙','🦸','🚀','⚡','🔥','👑','🎮','🏆','😎'];
+function avHTML(p, s = 22) {
+  if (!p || !p.av) return '';
+  return p.av.t === 'f' ? `<img class="av" src="${p.av.v}" width="${s}" height="${s}" alt="">`
+    : `<span class="av" style="width:${s}px;height:${s}px;font-size:${Math.round(s * .66)}px">${p.av.v}</span>`;
+}
+let AVID = null;
+function abrirAvatar(id) {
+  AVID = id; $('avTit').textContent = 'Foto de ' + P(id).name;
+  $('avGrade').innerHTML = EMOJIS.map(e => `<button class="avem" data-e="${e}">${e}</button>`).join('');
+  $('avatar').hidden = false;
+}
+const fecharAvatar = () => { $('avatar').hidden = true; AVID = null; };
+function reduzirFoto(file) {   // recorta o centro em quadrado de 96 px
+  return new Promise((ok, erro) => {
+    const r = new FileReader();
+    r.onload = () => { const im = new Image(); im.onload = () => {
+      const c = document.createElement('canvas'), t = Math.min(im.width, im.height); c.width = c.height = 96;
+      c.getContext('2d').drawImage(im, (im.width - t) / 2, (im.height - t) / 2, t, t, 0, 0, 96, 96); ok(c.toDataURL('image/jpeg', .8));
+    }; im.onerror = erro; im.src = r.result; };
+    r.onerror = erro; r.readAsDataURL(file);
+  });
+}
+$('avGrade').addEventListener('click', e => { const b = e.target.closest('.avem'); if (!b) return; P(AVID).av = { t: 'e', v: b.dataset.e }; fecharAvatar(); tudo(); });
+$('avFotoBtn').onclick = () => $('avFoto').click();
+$('avFoto').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f || AVID == null) return;
+  try { P(AVID).av = { t: 'f', v: await reduzirFoto(f) }; fecharAvatar(); tudo(); } catch { alert('Não consegui usar essa foto.'); }
+};
+$('avSem').onclick = () => { P(AVID).av = null; fecharAvatar(); tudo(); };
+$('avFechar').onclick = fecharAvatar;
+$('avatar').addEventListener('click', e => { if (e.target === $('avatar')) fecharAvatar(); });
+
+// ---- campeões e histórico (guardado sozinho quando alguém ganha) ----
+const HKEY = 'futebolinha-historico';
+const histLer = () => { try { return JSON.parse(localStorage.getItem(HKEY) || '[]'); } catch { return []; } };
+const histSalvar = h => localStorage.setItem(HKEY, JSON.stringify(h));
+function campeaoGeral() {
+  if (!S.started) return null;
+  if (S.modo === 'liga') {
+    if (!S.rounds.length || !S.rounds.every((_, ri) => completa(ri))) return null;
+    const l = classificar().filter(o => !o.out); return l.length ? l[0].id : null;
+  }
+  return campeao();
+}
+const resumo = id => { const p = P(id); return { nome: p.name, team: p.team, av: p.av || null }; };
+function sincronizarHistorico() {
+  try {
+    const c = campeaoGeral(), h = histLer(), i = h.findIndex(x => x.id === S.hid);
+    if (c == null) { if (i >= 0) { h.splice(i, 1); histSalvar(h); desenharHistorico(); } return; }
+    S.hid ||= Date.now();
+    const e = { id: S.hid, data: S.hid, modo: S.modo, n: S.players.length, campeao: resumo(c) };
+    if (i >= 0) h[i] = e; else h.unshift(e);
+    histSalvar(h); desenharHistorico();
+  } catch {}
+}
+const modoNome = m => m === 'mata' ? '🥊 Mata-mata' : m === 'copa' ? '🌍 Copa' : '🏆 Pontos corridos';
+function desenharHistorico() {
+  const h = histLer(), el = $('hist'); if (!el) return;
+  if (!h.length) { el.innerHTML = ''; return; }
+  const t = {}; h.forEach(x => { const k = x.campeao.nome.trim().toLowerCase(); (t[k] ||= { ...x.campeao, n: 0 }).n++; });
+  const rank = Object.values(t).sort((a, b) => b.n - a.n);
+  const mini = c => `<span class="tn">${avHTML({ av: c.av }, 22)}${escudo(c.team, 22)}<span>${esc(c.nome)}</span></span>`;
+  el.innerHTML = `<h2>🏅 Campeões</h2><div class="card">
+    <div class="tit-camp">${rank.map(c => `<span class="chipc">${mini(c)} <b>${c.n}×🏆</b></span>`).join('')}</div>
+    ${h.map(x => `<div class="hlin"><span class="mut">${new Date(x.data).toLocaleDateString('pt-BR')} · ${modoNome(x.modo)} · ${x.n} jogadores</span>${mini(x.campeao)}<button class="mini" data-hdel="${x.id}" aria-label="Apagar">✕</button></div>`).join('')}</div>`;
+}
+$('hist').addEventListener('click', e => {
+  const b = e.target.closest('[data-hdel]'); if (!b) return;
+  if (confirm('Apagar esse campeonato do histórico?')) { histSalvar(histLer().filter(x => String(x.id) !== b.dataset.hdel)); desenharHistorico(); }
+});
+
+// ---- imagem para compartilhar ----
+const imgCache = {};
+const carregar = src => imgCache[src] ||= new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
+async function imagemCampeonato() {
+  const W = 1080, f = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+  const clubes = [...new Set(S.players.map(p => p.team).filter(t => t != null && TIMES[t]))];
+  await Promise.all([...clubes.map(t => carregar('escudos/' + TIMES[t][5] + '.png')), ...S.players.filter(p => p.av && p.av.t === 'f').map(p => carregar(p.av.v))]);
+  const linhas = [], camp = campeaoGeral();
+  const tabLinha = (o, i, K = 0) => linhas.push({ t: 'row', i, o, K });
+  const pj = id => P(id);
+  if (S.modo === 'liga') { linhas.push({ t: 'sub', x: 'Tabela' }, { t: 'th' }); classificar().filter(o => !o.out).slice(0, 12).forEach((o, i) => tabLinha(o, i)); }
+  if (S.modo === 'copa') {
+    const { K } = copaCfg();
+    S.grupos.forEach((g, gi) => { linhas.push({ t: 'sub', x: 'Grupo ' + letra(gi) }, { t: 'th' }); classificar(g).filter(o => !o.out).forEach((o, i) => tabLinha(o, i, K)); });
+  }
+  if (S.modo !== 'liga' && S.chave.length >= 2) {
+    for (let r = 0; r < nRod(); r++) {
+      const ms = []; for (let i = 0; i < jogosEm(r); i++) {
+        const [a, b] = pares(r, i), k = `m-${r}-${i}`; if (a == null || b == null || !iniciado(k)) continue;
+        const [x, y] = placar(S.scores[k]), pn = x === y && S.pens[k] ? placar(S.pens[k]) : null; ms.push({ a, b, x, y, pn });
+      }
+      if (ms.length) { linhas.push({ t: 'sub', x: nomeRod(r).replace('🏆 ', '') }); ms.forEach(m => linhas.push({ t: 'match', m })); }
+    }
+  }
+  const H = { sub: 76, th: 56, row: 76, match: 84 };
+  const alt = 230 + (camp != null ? 270 : 0) + linhas.reduce((n, l) => n + H[l.t], 0) + 120;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = alt; const c = cv.getContext('2d');
+  // fundo gramado
+  for (let x = 0; x < W; x += 112) { c.fillStyle = (x / 112) % 2 ? '#2aa84b' : '#33bb56'; c.fillRect(x, 0, 112, alt); }
+  const rr = (x, y, w, h, r, fill, stroke) => { c.beginPath(); c.roundRect(x, y, w, h, r); if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.lineWidth = 6; c.strokeStyle = stroke; c.stroke(); } };
+  const crest = (ti, x, y, s) => { const t = TIMES[ti]; const im = t && imgCache['escudos/' + t[5] + '.png'] ; return im; };
+  const avatar = async (p, x, y, s) => {
+    if (!p || !p.av) return;
+    if (p.av.t === 'f') { const im = await carregar(p.av.v); if (im) { c.save(); c.beginPath(); c.arc(x + s / 2, y + s / 2, s / 2, 0, 7); c.clip(); c.drawImage(im, x, y, s, s); c.restore(); } }
+    else { c.font = `${Math.round(s * .8)}px ${f}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(p.av.v, x + s / 2, y + s / 2 + 3); }
+    c.lineWidth = 4; c.strokeStyle = '#0d3b1e'; c.beginPath(); c.arc(x + s / 2, y + s / 2, s / 2, 0, 7); c.stroke();
+  };
+  const escudoCv = async (ti, x, y, s) => {
+    const t = TIMES[ti]; if (!t) return; const im = await carregar('escudos/' + t[5] + '.png');
+    if (im) { const k = Math.min(s / im.width, s / im.height); c.drawImage(im, x + (s - im.width * k) / 2, y + (s - im.height * k) / 2, im.width * k, im.height * k); }
+    else { c.fillStyle = '#0a3d91'; c.beginPath(); c.arc(x + s / 2, y + s / 2, s / 2, 0, 7); c.fill(); c.fillStyle = '#fff'; c.font = `bold ${s * .32}px ${f}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(t[1], x + s / 2, y + s / 2); }
+  };
+  const jogadorCv = async (id, x, y, s, nomeX, maxW, fonte) => {
+    const p = pj(id); let cx = x; await avatar(p, cx, y, s); if (p.av) cx += s + 10;
+    await escudoCv(p.team, cx, y, s); cx += s + 14;
+    c.fillStyle = '#12301c'; c.font = fonte; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(p.name, cx, y + s / 2 + 2, maxW - (cx - x));
+  };
+  // cabeçalho
+  rr(30, 30, W - 60, 170, 36, '#ffd400', '#0d3b1e');
+  c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#0d3b1e'; c.font = `800 34px ${f}`; c.fillText('CAMPEONATO BRASILEIRO DE', W / 2, 78);
+  c.font = `900 82px ${f}`; c.lineWidth = 10; c.strokeStyle = '#0a3d91'; c.strokeText('FUTEBOLINHA', W / 2, 142); c.fillStyle = '#fff'; c.fillText('FUTEBOLINHA', W / 2, 142);
+  let y = 230;
+  if (camp != null) {
+    rr(30, y, W - 60, 240, 36, '#fff3a8', '#0d3b1e');
+    c.fillStyle = '#0a3d91'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = `900 46px ${f}`; c.fillText('🏆 CAMPEÃO 🏆', W / 2, y + 50);
+    const p = pj(camp); const s = 120, tw = (() => { c.font = `900 64px ${f}`; return c.measureText(p.name).width; })();
+    const total = (p.av ? s + 16 : 0) + s + 20 + Math.min(tw, 560); let cx = (W - total) / 2;
+    await avatar(p, cx, y + 90, s); if (p.av) cx += s + 16; await escudoCv(p.team, cx, y + 90, s); cx += s + 20;
+    c.fillStyle = '#0d3b1e'; c.font = `900 64px ${f}`; c.textAlign = 'left'; c.fillText(p.name, cx, y + 152, 560);
+    y += 270;
+  }
+  // corpo
+  let blocoTop = y; const alturaCorpo = linhas.reduce((n, l) => n + H[l.t], 0);
+  if (linhas.length) rr(30, blocoTop, W - 60, alturaCorpo + 20, 30, '#ffffff', '#0d3b1e');
+  y += 10;
+  for (const l of linhas) {
+    if (l.t === 'sub') { rr(50, y + 12, c.measureText(l.x).width + 60 > 0 ? 330 : 330, 52, 26, '#0a3d91'); c.fillStyle = '#fff'; c.font = `900 30px ${f}`; c.textAlign = 'left'; c.textBaseline = 'middle'; c.fillText(l.x, 72, y + 40, 290); }
+    else if (l.t === 'th') {
+      c.fillStyle = '#5d7a66'; c.font = `800 24px ${f}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      [['Pts', 700], ['J', 790], ['V', 860], ['E', 930], ['D', 1000]].forEach(([t, x]) => c.fillText(t, x, y + 28));
+    } else if (l.t === 'row') {
+      const o = l.o; if (l.K && l.i < l.K) rr(44, y + 4, W - 88, 68, 14, '#e8f8ec');
+      c.fillStyle = '#0a3d91'; c.font = `900 34px ${f}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(l.i === 0 && o.J && !l.K ? '🥇' : l.i === 1 && o.J && !l.K ? '🥈' : l.i === 2 && o.J && !l.K ? '🥉' : String(l.i + 1), 90, y + 40);
+      await jogadorCv(o.id, 130, y + 10, 56, 0, 520, `800 32px ${f}`);
+      c.textAlign = 'center'; c.fillStyle = '#0a3d91'; c.font = `900 36px ${f}`; c.fillText(o.P, 700, y + 40);
+      c.fillStyle = '#12301c'; c.font = `700 28px ${f}`; [[o.J, 790], [o.V, 860], [o.E, 930], [o.D, 1000]].forEach(([v, x]) => c.fillText(v, x, y + 40));
+    } else if (l.t === 'match') {
+      const m = l.m, vencA = m.x > m.y || (m.pn && m.pn[0] > m.pn[1]);
+      await jogadorCv(m.a, 60, y + 12, 52, 0, 400, `${vencA ? 900 : 700} 28px ${f}`);
+      c.textAlign = 'center'; c.fillStyle = '#0a3d91'; c.font = `900 44px ${f}`; c.textBaseline = 'middle'; c.fillText(`${m.x} × ${m.y}`, 540, y + 40);
+      if (m.pn) { c.font = `700 20px ${f}`; c.fillStyle = '#d62f1f'; c.fillText(`pên. ${m.pn[0]}-${m.pn[1]}`, 540, y + 70); }
+      const pb = pj(m.b); c.font = `${!vencA ? 900 : 700} 28px ${f}`; c.textAlign = 'right'; c.fillStyle = '#12301c'; c.textBaseline = 'middle';
+      c.fillText(pb.name, 1020 - 52 - 14 - (pb.av ? 52 + 10 : 0), y + 42, 250);
+      let bx = 1020 - 52 - (pb.av ? 52 + 10 : 0); await escudoCv(pb.team, bx, y + 14, 52); if (pb.av) await avatar(pb, 1020 - 52, y + 14, 52);
+    }
+    y += H[l.t];
+  }
+  c.fillStyle = '#fff'; c.font = `800 28px ${f}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(new Date().toLocaleDateString('pt-BR') + ' · msrodrigues.github.io/futebolinha', W / 2, alt - 45);
+  return cv;
+}
+async function compartilhar() {
+  try {
+    const cv = await imagemCampeonato(), blob = await new Promise(r => cv.toBlob(r, 'image/png')), arq = new File([blob], 'futebolinha.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [arq] })) await navigator.share({ files: [arq], title: 'Futebolinha' });
+    else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'futebolinha.png'; a.click(); }
+  } catch (e) { if (e.name !== 'AbortError') alert('Não consegui criar a imagem.'); }
+}
 
 // ---- seletor de time ----
 const semAcento = x => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();

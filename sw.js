@@ -1,5 +1,5 @@
 // Service worker: guarda o app na instalação e cada escudo na primeira vez que ele aparece
-const CACHE = 'futebolinha-v7';
+const CACHE = 'futebolinha-v8';
 const BASE = ['./', 'index.html', 'times.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASE)).then(() => self.skipWaiting()));
